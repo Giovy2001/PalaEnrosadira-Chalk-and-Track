@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - Profilo{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/home/profile.css">
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/profile/profile_data_request.js" defer></script>
+<script src="/static/js/profile/profile-color-switcher.js" defer></script>
+{% endblock %}
+{% block content %}
+<section>
+  <div class="relative">
+    <div class="profile-image-container">
+      <img class="profile-image" id="profile-image" src="/static/icons/profile/Icon_0.png" alt="Icona del profilo">
+      <div class="profile-tag" id="profile-tag">NEW</div>
+      <div class="score-container">
+        <p class="username-input score" id="profile-score">0</p>
+        <p class="username-input score-unit">punti</p>
+      </div>
+      <button class="profile-color-selector" type="button" onclick="switch_profile_color()" aria-label="Cambia colore del profilo">
+        <div class="profile-color-active" id="profile-color-active"></div>
+        <div class="profile-color-customize"><i class="fa-solid fa-palette"></i></div>
+      </button>
+    </div>
+
+    <div class="username-container">
+      <p class="cell-title user-title">Nome utente</p>
+      {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+      <form method="POST">
+        {% if auth_token %}<input type="hidden" name="auth_token" value="{{ auth_token }}">{% endif %}
+        <input type="text" id="usernameInput" class="username-input" name="username-input"
+               value="{{ current_user or '' }}" placeholder="Scrivi il tuo nome" maxlength="40" required>
+        <button class="default-button" type="submit">Aggiorna nome</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="stat-grid">
+  <div class="cell-grid">
+    <p class="cell-title">Blocchi creati</p>
+    <h3 class="cell-value" id="stat-created-n">0</h3>
+  </div>
+  <div class="cell-grid">
+    <p class="cell-title">Grado più elevato</p>
+    <h3 class="cell-value" id="stat-created-hardest">-</h3>
+  </div>
+</section>
+
+<section class="profile-lists">
+  <div>
+    <h3>BLOCCHI COMPLETATI</h3>
+    <div id="completedList" class="route-list"><p class="empty-state">Nessun blocco completato.</p></div>
+  </div>
+  <div>
+    <h3>I MIEI BLOCCHI</h3>
+    <div id="myRoutesList" class="route-list"><p class="empty-state">Non hai ancora creato blocchi.</p></div>
+    <a class="default-button" href="/select_image">Crea un nuovo blocco</a>
+  </div>
+</section>
+
+<script>
+  window.PROFILE_USER = {{ current_user | tojson }};
+  window.GRADES = {{ grades | tojson }};
+</script>
+{% endblock %}

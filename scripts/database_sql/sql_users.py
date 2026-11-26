@@ -1,180 +1,189 @@
-import libsql
-from datetime import datetime
-from scripts.database_sql import sql_holds
-import json
+"""Accesso alla tabella users."""
 
-### UTILITIES
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+
+import libsql
+
+EDITABLE_FIELDS = {
+    "user_color",
+    "points",
+    "last_seen_date",
+    "serialized_completed_routes",
+    "auth_token_hash",
+}
+
+TABLE_STRUCTURE = (
+    "user_id",
+    "user_name",
+    "user_color",
+    "creation_date",
+    "last_seen_date",
+    "points",
+    "serialized_completed_routes",
+    "auth_token_hash",
+)
+# SELECT esplicito: i database creati prima della rimozione di `user_icon`
+# hanno un numero di colonne diverso, quindi `SELECT *` sfaserebbe i campi.
+SELECT_COLUMNS = ", ".join(TABLE_STRUCTURE)
+
+
+def _today() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _validate_username(user_name: str) -> str:
+    if not isinstance(user_name, str) or not user_name.strip():
+        raise ValueError("Nome utente non valido")
+    return user_name.strip()
+
 
 def format_table(user_object: tuple) -> dict:
-    """
-    Convert a user tuple from the database into a formatted dictionary.
-    This function maps a tuple of user data to a dictionary with descriptive keys,
-    and deserializes the completed routes from JSON format.
-    Args:
-        user_object (tuple): A tuple containing user data in the following order:
-            - user_id: Unique identifier for the user
-            - user_name: Name of the user
-            - user_icon: Icon associated with the user
-            - user_color: Color preference of the user
-            - creation_date: Date when the user account was created
-            - last_seen_date: Date when the user was last active
-            - points: User's accumulated points
-            - serialized_completed_routes: JSON string of completed routes (deserialized as a list)
-    """
-    
-    table_structure: tuple = ("user_id", "user_name", "user_icon", "user_color", "creation_date", "last_seen_date", "points", "serialized_completed_routes")
-    user_dict: dict = {table_structure[index]:user_object[index] for index in range(len(table_structure))}
-    user_dict["serialized_completed_routes"] = json.loads(user_dict["serialized_completed_routes"])
+    """Converte una riga users in dizionario, deserializzando i completamenti."""
+
+    user_dict = {
+        column: user_object[index]
+        for index, column in enumerate(TABLE_STRUCTURE)
+        if index < len(user_object)
+    }
+    raw_completed = user_dict.get("serialized_completed_routes") or "[]"
+    try:
+        user_dict["serialized_completed_routes"] = json.loads(raw_completed)
+    except (TypeError, ValueError):
+        user_dict["serialized_completed_routes"] = []
     return user_dict
 
 
 ### GETS
 
-def get_all_users(conn: libsql.Connection) -> list:
-    """
-    Retrieve all users from the database.
-    Args:
-        conn (libsql.Connection): A database connection object to execute queries.
-    Returns:
-        list: A list of formatted user records from the users table. Each user is 
-              formatted using the format_table function.
-    """
-    
-    cursor: libsql.Cursor = conn.cursor()
-    users: list = cursor.execute("SELECT * FROM users").fetchall()
+
+def get_all_users(conn: libsql.Connection) -> list[dict]:
+    cursor = conn.cursor()
+    users = cursor.execute(f"SELECT {SELECT_COLUMNS} FROM users").fetchall()
     return [format_table(user) for user in users]
 
 
-def get_user(conn: libsql.Connection, user_name: int) -> dict:
-    """
-    Retrieve a user from the database by username.
-    Args:
-        conn (libsql.Connection): Database connection object.
-        user_name (str): The username to search for in the users table.
-    Returns:
-        dict: A formatted dictionary containing the user's information.
-    """
-    
-    cursor: libsql.Cursor = conn.cursor()
-    user: tuple = cursor.execute("SELECT * FROM users WHERE user_name=?", (user_name,)).fetchone()
-    return format_table(user)
+def get_user(conn: libsql.Connection, user_name: str) -> dict:
+    """Restituisce l'utente oppure ``{"exist": False}``."""
+
+    if not isinstance(user_name, str) or not user_name.strip():
+        return {"exist": False}
+    cursor = conn.cursor()
+    user = cursor.execute(
+        f"SELECT {SELECT_COLUMNS} FROM users WHERE user_name = ?",
+        (user_name.strip(),),
+    ).fetchone()
+    if not user:
+        return {"exist": False}
+    user_dict = format_table(user)
+    user_dict["exist"] = True
+    return user_dict
 
 
 ### SETS
 
-def edit_user(conn: libsql.Connection, user_name: int, data_to_override: dict) -> None:
-    """
-    Update user information in the database.
-    Args:
-        conn (libsql.Connection): The database connection object.
-        user_name (str): The username to search for in the users table.
-        data_to_override (dict): A dictionary containing the column names as keys 
-                                 and their new values to update in the users table.
-    """
-    
-    instruction: str = ", ".join([f'{key} = ?' for key in data_to_override])
-    values: list = [data_to_override[key] for key in data_to_override]
-    values.append(user_name)
 
-    cursor: libsql.Cursor = conn.cursor()
-    cursor.execute(
-        f"UPDATE users SET {instruction} WHERE user_name = ?",
-        values
-    )
-    
-    conn.commit()
-    
+def edit_user(conn: libsql.Connection, user_name: str, data_to_override: dict) -> None:
+    """Aggiorna solo colonne ammesse della tabella users."""
 
-def edit_completed_routes(conn: libsql.Connection, user_name: int, completed_routes: list) -> None:
-    """
-    Update the completed routes for a user in the database.
-    Args:
-        conn (libsql.Connection): The database connection object.
-        user_name (str): The username to search for in the users table.
-        completed_routes (list): A list of completed routes to be associated with the user.
-    Notes:
-        - The completed routes list is serialized to JSON before being stored in the database.
-    """
-    
-    serialized_completed_routes: str = json.dumps(completed_routes)
-    
-    cursor: libsql.Cursor = conn.cursor()
-    cursor.execute(
-        f"UPDATE users SET serialized_completed_routes = ? WHERE user_name = ?",
-        (serialized_completed_routes, user_name)
+    if not data_to_override:
+        raise ValueError("Nessun dato da aggiornare")
+    invalid = set(data_to_override) - EDITABLE_FIELDS
+    if invalid:
+        raise ValueError(f"Campi non aggiornabili: {', '.join(sorted(invalid))}")
+
+    user_name = _validate_username(user_name)
+    instruction = ", ".join(f"{key} = ?" for key in data_to_override)
+    values = [*data_to_override.values(), user_name]
+    conn.cursor().execute(
+        f"UPDATE users SET {instruction} WHERE user_name = ?", values
     )
-    
     conn.commit()
+
+
+def edit_completed_routes(
+    conn: libsql.Connection, user_name: str, completed_routes: list
+) -> None:
+    if not isinstance(completed_routes, list):
+        raise ValueError("I blocchi completati devono essere una lista")
+    edit_user(
+        conn,
+        user_name,
+        {
+            "serialized_completed_routes": json.dumps(completed_routes),
+            "last_seen_date": _today(),
+        },
+    )
+
+
+def add_points(conn: libsql.Connection, user_name: str, points: int) -> None:
+    """Aggiunge punti all'utente, aggiornando last_seen_date."""
+
+    if not isinstance(points, int):
+        raise ValueError("I punti devono essere un intero")
+    user = get_user(conn, user_name)
+    if not user.get("exist"):
+        raise ValueError("Utente inesistente")
+    edit_user(
+        conn,
+        user_name,
+        {
+            "points": int(user["points"] or 0) + points,
+            "last_seen_date": _today(),
+        },
+    )
 
 
 def add_user(conn: libsql.Connection, user_data: dict) -> None:
-    """
-    Add a new user to the database.
-    Args:
-        conn (libsql.Connection): Database connection object used to execute queries.
-        user_data (dict): Dictionary containing user information with the following keys:
-            - user_name (str): The username of the new user.
-            - user_icon (str): The icon/avatar identifier for the user.
-            - user_color (str): The color preference for the user.
-    Notes:
-        - The creation_date and last_seen_date are automatically set to the current date.
-        - Initial points are set to 0.
-        - serialized_completed_routes is initialized as an empty JSON array.
-    """
-    
-    creation_date: str = datetime.today().strftime(r'%d-%m-%Y')
-    
-    cursor: libsql.Cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO users(user_name, user_icon, user_color, creation_date, last_seen_date, points, serialized_completed_routes) VALUES (?,?,?,?,?,?,?)",
-        (user_data["user_name"], user_data["user_icon"], user_data["user_color"], creation_date, creation_date, 0, json.dumps([]))
+    """Crea un nuovo utente. Solleva ValueError se i dati non sono validi."""
+
+    user_name = _validate_username(user_data.get("user_name"))
+    color = user_data.get("user_color", 0)
+    try:
+        color = int(color)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Colore non valido") from exc
+    if not 0 <= color <= 7:
+        raise ValueError("Colore non valido")
+
+    if get_user(conn, user_name).get("exist"):
+        raise ValueError("Utente già esistente")
+
+    today = _today()
+    conn.cursor().execute(
+        "INSERT INTO users(user_name, user_color, creation_date, last_seen_date, "
+        "points, serialized_completed_routes, auth_token_hash) VALUES (?,?,?,?,?,?,?)",
+        (user_name, str(color), today, today, 0, json.dumps([]), None),
     )
-    
     conn.commit()
-    
+
 
 ### DELETES
 
-def del_user(conn: libsql.Connection, user_name: int) -> None:
-    """
-    Delete a user from the database by their user ID.
-    Args:
-        conn (libsql.Connection): The database connection object used to execute the query.
-        user_name (str): The username to search for in the users table.
-    """
-    
-    cursor: libsql.Cursor = conn.cursor()
-    cursor.execute(
-        "DELETE FROM users WHERE user_name = ?",
-        (user_name,)
+
+def del_user(conn: libsql.Connection, user_name: str) -> None:
+    conn.cursor().execute(
+        "DELETE FROM users WHERE user_name = ?", (_validate_username(user_name),)
     )
-    
     conn.commit()
-    
+
 
 ### INIT
 
-def init_users_table(conn: libsql.Connection) -> None:
-    """
-    Initialize the users table in the database.
-    Creates a new 'users' table if it does not already exist. The table stores
-    user profile information including identification, preferences, activity tracking,
-    and progress metrics.
-    Args:
-        conn (libsql.Connection): A LibSQL database connection object used to execute
-                                   the CREATE TABLE statement and commit changes.
-    """
 
-    cursor: libsql.Cursor = conn.cursor()    
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users(
+def init_users_table(conn: libsql.Connection) -> None:
+    conn.cursor().execute(
+        """CREATE TABLE IF NOT EXISTS users(
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_name TEXT,
-        user_icon TEXT,
+        user_name TEXT UNIQUE,
         user_color TEXT,
         creation_date TEXT,
         last_seen_date TEXT,
         points INTEGER,
-        serialized_completed_routes TEXT
-    )""")
-    
+        serialized_completed_routes TEXT,
+        auth_token_hash TEXT
+    )"""
+    )
     conn.commit()

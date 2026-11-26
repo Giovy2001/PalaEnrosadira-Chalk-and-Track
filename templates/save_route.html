@@ -1,52 +1,41 @@
-<head>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400&display=swap" rel="stylesheet">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PalaEnrosadira - Finalizza blocco</title>
-
-    <link rel="stylesheet" href="/static/css/body.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/input.css" type="text/css">
-</head>
-
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - Finalizza blocco{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/input.css">{% endblock %}
+{% block content %}
 <h3>Nome e Descrizione</h3>
 
-<form method="POST" enctype="multipart/form-data">
+{% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
 
-    <input type="text" id="routeName" name="routeName" placeholder="Nome della via" required>
+<form method="POST">
+  {% if auth_token %}<input type="hidden" name="auth_token" value="{{ auth_token }}">{% endif %}
 
-    <textarea id="routeDescription" name="routeDescription" rows="4" placeholder="Descrizione della via"></textarea>
+  <label for="routeName">Nome della via</label>
+  <input type="text" id="routeName" name="routeName" placeholder="Nome della via" required maxlength="80">
 
-    <label id="routeAuthor">Anonimo</label>
-    
-    <div class="controls">
-        <button id="finish">Salva</button>
-    </div>
-    
-    <input type="hidden" id="routeAuthorHidden" name="routeAuthor">
+  <label for="routeGrade">Grado (opzionale)</label>
+  <select id="routeGrade" name="routeGrade">
+    <option value="">Nessuno</option>
+    {% for grade in grades %}
+    <option value="{{ grade }}">{{ grade }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="routeDescription">Descrizione</label>
+  <textarea id="routeDescription" name="routeDescription" rows="4" placeholder="Descrizione della via"></textarea>
+
+  <p class="route-author">Tracciatore: <strong>{{ author or current_user or 'Anonimo' }}</strong></p>
+
+  <div class="controls">
+    <button id="finish" class="default-button" type="submit">Salva</button>
+  </div>
 </form>
 
 <script>
-    const authorLabel = document.getElementById('routeAuthor');
-    const authorInput = document.getElementById('routeAuthorHidden');
-
-    let author = localStorage.getItem('chalk_and_track_username');
-    if (author != null) {
-        authorLabel.textContent = author;
-        authorInput.value = author;
-    }
-
-    // Importa nome e descrizione dal blocco esistente se richiamato dall'edit
-    let existing_route_object = {{ route_object|tojson if route_object else 'null' }};
-
-    if (existing_route_object["route_name"]) {
-        const routeName = document.getElementById('routeName');
-        routeName.value = existing_route_object["route_name"];
-    }
-    if (existing_route_object["route_description"]) {
-        const routeDescription = document.getElementById('routeDescription');
-        routeDescription.value = existing_route_object["route_description"];
-    }    
+  const existingRoute = {{ route_object | tojson if route_object else 'null' }};
+  if (existingRoute && typeof existingRoute === 'object') {
+    document.getElementById('routeName').value = existingRoute.route_name || '';
+    document.getElementById('routeDescription').value = existingRoute.route_description || '';
+    document.getElementById('routeGrade').value = existingRoute.route_grade || '';
+  }
 </script>
+{% endblock %}

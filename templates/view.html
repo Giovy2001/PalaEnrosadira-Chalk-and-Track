@@ -1,114 +1,75 @@
-<head>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400&display=swap" rel="stylesheet">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PalaEnrosadira - Visualizza blocco</title>
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - {{ route.route_name }}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="/static/css/return_button.css">
+<link rel="stylesheet" href="/static/css/holds.css">
+<link rel="stylesheet" href="/static/css/view.css">
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/holds_handler.js" defer></script>
+<script src="/static/js/holds_viewer.js" defer></script>
+{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="title">
+    <h1>{{ route.route_name }}</h1>
+    <h2 class="author">Tracciatore: {{ route.author }}</h2>
+    <a>{{ route.creation_date }}{% if route.route_grade %} &middot; {{ route.route_grade }}{% endif %}</a>
+  </div>
+  <div class="description">{{ route.route_description }}</div>
+</div>
 
-    <link rel="stylesheet" href="/static/css/body.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/input.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/return_button.css" type="text/css">
-    
-    <link rel="stylesheet" href="/static/css/holds.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/view.css" type="text/css">
+<div id="holdContainer" style="position:relative;">
+  <img id="routeImage" src="{{ route.image_url }}" alt="Foto della via">
+</div>
 
-    <!-- Holds viewer -->
-    <script src="/static/js/holds_handler.js" defer></script>
-    <script src="/static/js/holds_viewer.js" defer></script>
-    <script src="/static/js/route_property_checker.js" defer></script>
-</head>
+<h2>Legenda:</h2>
+<div class="legend">
+  <div class="legend-column">
+    <div class="legend-item"><span class="dot start"></span><span class="label">Start</span></div>
+    <div class="legend-item"><span class="dot middle"></span><span class="label">Normale</span></div>
+    <div class="legend-item"><span class="dot zone"></span><span class="label">Zona</span></div>
+    <div class="legend-item"><span class="dot top"></span><span class="label">Top</span></div>
+  </div>
+  <div class="legend-column">
+    <div class="legend-item"><span class="use_character">P</span><span class="label">Piede</span></div>
+    <div class="legend-item"><span class="use_character">NV</span><span class="label">No volume</span></div>
+    <div class="legend-item"><span class="use_character">SV</span><span class="label">Solo volume</span></div>
+    <div class="legend-item"><span class="use_character">SM</span><span class="label">Solo mani</span></div>
+    <div class="legend-item"><span class="use_character">SP</span><span class="label">Solo piedi</span></div>
+  </div>
+</div>
 
-<!-- Background grain -->
-<div class="background_color"></div>
-<div class="grain"></div>
+{% if current_user %}
+<form method="POST" class="action-forms">
+  {% if auth_token %}<input type="hidden" name="auth_token" value="{{ auth_token }}">{% endif %}
+  <button name="completeRoute" class="default-button" type="submit">Segna come completato</button>
+</form>
+{% endif %}
 
-<body>
-    <div class="container">
-        <div class="title">
-            <h1>{{route["route_name"]}}</h1>
-            <h2 class="author">Tracciatore: {{route["author"]}}</h2>
-            <a>{{route["creation_date"]}}</a>
-        </div>
-        <p>&emsp;</p>        
-        <div class="description">
-            <a>{{route["route_description"]}}</a>
-        </div>
-    </div>
-    <div id="holdContainer" style="position:relative;">
-      <img id="routeImage" src={{route["image_url"]}} alt="Foto via">
-    </div>
+{% if is_author %}
+<form method="POST" class="action-forms">
+  {% if auth_token %}<input type="hidden" name="auth_token" value="{{ auth_token }}">{% endif %}
+  <h2>Sei l'autore di questo blocco:</h2>
+  <button name="authorName" class="default-button" type="submit">Modifica Nome e Descrizione</button>
+  <button name="authorHolds" class="default-button" type="submit">Modifica Prese</button>
+  <button name="authorDelete" class="default-button" type="submit" onclick="return confirm('Eliminare definitivamente questo blocco?');">Elimina Blocco</button>
+</form>
+{% endif %}
 
-    <h2>Legenda:</h2>
-    <div class="legend">
+<h2>Beta</h2>
+{% if betas %}
+  {% for beta in betas %}
+  <div class="beta"><strong>{{ beta.title }}</strong><p>{{ beta.body }}</p></div>
+  {% endfor %}
+{% else %}
+  <p>Nessuna beta per questo blocco.</p>
+{% endif %}
 
-        <div class="legend-column">
-            <div class="legend-item">
-                <span class="dot start"></span>
-                <span class="label">Start</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="dot middle"></span>
-                <span class="label">Middle</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="dot zone"></span>
-                <span class="label">Zona</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="dot top"></span>
-                <span class="label">Top</span>
-            </div>
-        </div>
-        <div class="legend-column">
-            <div class="legend-item">
-                <span class="use_character">P</span>
-                <span class="label">Piede</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="use_character">NV</span>
-                <span class="label">No volume</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="use_character">SV</span>
-                <span class="label">Solo volume</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="use_character">SM</span>
-                <span class="label">Solo mani</span>
-            </div>
-
-            <div class="legend-item">
-                <span class="use_character">SP</span>
-                <span class="label">Solo piedi</span>
-            </div>
-        </div>
-    </div>
-
-    <form method="POST" enctype="multipart/form-data">
-        <div class="authorButtons" id="authorButtons">
-            <h2>Sei l'autore di questo blocco:</h2>
-            <p>&emsp;</p> 
-            <button id="editButton" name="authorName">Modifica Nome e Descrizione</button>
-            <button id="editButton" name="authorHolds">Modifica Prese</button>
-            <button id="deleteButton" name="authorDelete">Elimina Blocco</button>
-            <div class="spacer"></div>
-        </div>
-    </form>
-
-    <div class="back">
-        <button onclick="window.location.href='/';">Torna alla pagina iniziale</button>
-    </div>
-</body>
+<div class="back"><a class="default-button" href="/archive">Torna all'archivio</a></div>
 
 <script>
-    let holds = {{ holds | tojson }}
-    const routeAuthour = "{{ route['author'] }}"
+  window.holds = {{ holds | tojson }};
 </script>
+{% endblock %}

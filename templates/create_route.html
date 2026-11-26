@@ -1,74 +1,59 @@
-<head>
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400&display=swap" rel="stylesheet">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PalaEnrosadira - Crea blocco</title>
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - Seleziona prese{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="/static/css/holds.css">
+<link rel="stylesheet" href="/static/css/create.css">
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/holds_handler.js" defer></script>
+<script src="/static/js/holds_selector.js" defer></script>
+{% endblock %}
+{% block content %}
+<h3>Seleziona prese blocco</h3>
 
-  <link rel="stylesheet" href="/static/css/body.css" type="text/css">
-  <link rel="stylesheet" href="/static/css/input.css" type="text/css">
-  
-  <link rel="stylesheet" href="/static/css/holds.css" type="text/css">
-  <link rel="stylesheet" href="/static/css/create.css" type="text/css">
+{% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
 
-  <!-- holds selector -->
-  <script src="/static/js/holds_handler.js" defer></script>
-  <script src="/static/js/holds_selector.js" defer></script>
-</head>
-
-<!-- Background grain -->
-<div class="grain"></div>
-
-
-<body>
-  <h3>Seleziona prese blocco</h3>
-
-  <div class="tableSelector">
-    <div class="tipo">
-      <label>Tipo di presa:</label>
-      <select id="hold_type_select">
-        <option value="start">Start</option>
-        <option value="middle">Normale</option>
-        <option value="zone">Zona</option>
-        <option value="top">Top</option>
-      </select>
-    </div>
-
-    <div class="uso">
-      <label>Utilizzo presa:</label>
-      <select id="hold_use_select">
-        <option value="normal">Normale</option>
-        <option value="foot">Piede</option>
-        <option value="no_volume">No volume</option>
-        <option value="only_volume">Solo volume</option>
-        <option value="only_hand">Solo mani</option>
-        <option value="only_foot">Solo piedi</option>
-      </select>
-    </div>
+<div class="tableSelector">
+  <div class="tipo">
+    <label for="hold_type_select">Tipo di presa:</label>
+    <select id="hold_type_select">
+      <option value="start">Start</option>
+      <option value="middle">Normale</option>
+      <option value="zone">Zona</option>
+      <option value="top">Top</option>
+    </select>
   </div>
-
-  <label>Dimensione presa:</label>
-  <input type="range" class="slider" id="hold_size" min="0.5" max="8" step="0.2" value="2">
-
-</body>
-
-
-<form method="POST" enctype="multipart/form-data">
-  <div class="tableSelector">
-    <button type="button" id="delete_hold">Elimina presa</button>
-    <button id="save_route">Finalizza blocco</button>
+  <div class="uso">
+    <label for="hold_use_select">Utilizzo presa:</label>
+    <select id="hold_use_select">
+      <option value="normal">Normale</option>
+      <option value="foot">Piede</option>
+      <option value="no_volume">No volume</option>
+      <option value="only_volume">Solo volume</option>
+      <option value="only_hand">Solo mani</option>
+      <option value="only_foot">Solo piedi</option>
+    </select>
   </div>
+</div>
 
+<label for="hold_size">Dimensione presa:</label>
+<input type="range" class="slider" id="hold_size" min="0.5" max="8" step="0.2" value="2">
+
+<div id="holdContainer" style="position:relative;">
+  <img id="routeImage" src="{{ data.image_url }}" alt="Foto della via">
+</div>
+
+<form method="POST" id="holdsForm">
+  {% if auth_token %}<input type="hidden" name="auth_token" value="{{ auth_token }}">{% endif %}
+  <div class="tableSelector">
+    <button type="button" id="delete_hold" class="default-button">Elimina presa</button>
+    <button type="submit" id="save_route" class="default-button">Finalizza blocco</button>
+  </div>
   <input id="jsonHoldsHidden" name="jsonHolds" type="hidden">
 </form>
 
-<div id="holdContainer" style="position:relative;">
-  <img id="routeImage" src="" alt="Foto via">
-</div>
-
 <script>
-  let previous_data = {{data|tojson}};
-  document.getElementById('routeImage').src = previous_data["image_url"];
+  window.previous_data = {{ data | tojson }};
 </script>
+{% endblock %}

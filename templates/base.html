@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Chalk &amp; Track{% endblock %}</title>
+
+  <link rel="apple-touch-icon" id="apple-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png">
+  <link rel="manifest" href="/static/icons/site.webmanifest">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/palette.css">
+  <link rel="stylesheet" href="/static/css/body.css">
+  <link rel="stylesheet" href="/static/css/bottom-nav.css">
+  <link rel="stylesheet" href="/static/css/input.css">
+  {% block styles %}{% endblock %}
+
+  <script>
+    window.APP_USER = {{ current_user | default(None) | tojson }};
+    window.APP_TOKEN = {{ auth_token | default(None) | tojson }};
+  </script>
+  <script src="/static/js/app.js" defer></script>
+  {% block scripts %}{% endblock %}
+</head>
+<body>
+  <div class="background_color"></div>
+  <div class="grain"></div>
+
+  {% block content %}{% endblock %}
+
+  {% block nav %}
+  <nav class="bottom-nav">
+    <a class="nav-item{% if request.path == '/' %} active{% endif %}" href="/">
+      <i class="fa-solid fa-fire fa-xl nav-icon"></i>
+      <span class="nav-label">Esplora</span>
+    </a>
+    <a class="nav-item" id="create-button-hidden" href="/select_image">
+      <i class="fa-solid fa-circle-plus fa-xl nav-icon"></i>
+      <span class="nav-label">Crea</span>
+    </a>
+    <a class="nav-item{% if request.path == '/archive' %} active{% endif %}" href="/archive">
+      <i class="fa-solid fa-box-open fa-xl nav-icon"></i>
+      <span class="nav-label">Archivio</span>
+    </a>
+    <a class="nav-item{% if request.path == '/profile' %} active{% endif %}" href="/profile">
+      <i class="fa-solid fa-user fa-xl nav-icon"></i>
+      <span class="nav-label">Profilo</span>
+    </a>
+  </nav>
+  {% endblock %}
+
+  <script src="https://kit.fontawesome.com/4f9d6b6c17.js" crossorigin="anonymous"></script>
+</body>
+</html>

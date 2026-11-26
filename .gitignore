@@ -1,0 +1,24 @@
+# Segreti e configurazione locale
+.env
+.env.*
+!.env.example
+.vercel
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Database locale e immagini (dati, non codice)
+static/local_database/*.db
+static/local_database/*.db-*
+static/local_database/Images/
+
+# Test e cache
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.DS_Store

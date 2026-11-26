@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - Esplora{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/home/explore.css">{% endblock %}
+{% block content %}
+<div class="centerblock">
+  <div class="title">
+    <h1>Esplora</h1>
+    <h3>Blocchi recenti della palestra</h3>
+  </div>
+
+  {% if empty %}
+  <div class="container-under shadow">
+    <p>Non ci sono blocchi da mostrare. Crea tu il primo!</p>
+    <a class="default-button" href="/select_image">Crea un blocco</a>
+  </div>
+  {% else %}
+  <div class="explore-grid">
+    {% for route in routes %}
+    <a href="/route_{{ route.route_id }}" class="explore-card">
+      <img src="{{ route.image_url }}" alt="Foto della via {{ route.route_name }}">
+      <div class="explore-card-body">
+        <strong>{{ route.route_name }}</strong>
+        <span>{{ route.author }}{% if route.route_grade %} &middot; {{ route.route_grade }}{% endif %}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

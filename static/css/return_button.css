@@ -1,7 +1,22 @@
-button {
+/* Solo il pulsante "Torna" e' ancorato in basso: gli altri .default-button
+   devono restare nel flusso normale (create.css, view.css, ...). */
+.back {
     position: fixed;
-    bottom: 10px;
+    bottom: 76px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 900;
+}
+
+.back .default-button {
     width: 89.8%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--primary-light);
+    text-decoration: underline;
 }

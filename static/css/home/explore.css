@@ -1,0 +1,75 @@
+/* Esplora: feed dei blocchi recenti. La body resta gestita da body.css. */
+
+.centerblock {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+h1, h2, h3 {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: inherit;
+}
+
+.container-under {
+    background-color: var(--dark);
+    color: var(--very-light);
+    border-left: 4px solid var(--secondary);
+    margin: 2rem auto;
+    max-width: 24rem;
+    padding: 2rem;
+    text-align: center;
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+}
+
+.shadow {
+    box-shadow: 0 0 30px color-mix(in srgb, var(--secondary-light) 10%, transparent);
+}
+
+.explore-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 1rem;
+}
+
+.explore-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--dark);
+    border: 2px solid white;
+    color: var(--very-light);
+    text-decoration: none;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.explore-card:hover {
+    transform: scale(1.02);
+}
+
+.explore-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.explore-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.explore-card-body span {
+    font-size: 0.8rem;
+    color: var(--light);
+}

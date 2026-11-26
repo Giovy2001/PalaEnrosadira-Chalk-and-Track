@@ -1,170 +1,157 @@
-// --- Gestione prese ---
+// Selettore interattivo delle prese sulla foto della via.
 
-// save holds
-const holds_label = document.getElementById('jsonHoldsHidden');
-const saveButton = document.getElementById('save_route');
-saveButton.addEventListener('click', (e) => {
-    holds_label.value = JSON.stringify(holds)
-});
+document.addEventListener('DOMContentLoaded', () => {
+  const holdsLabel = document.getElementById('jsonHoldsHidden');
+  const holdsForm = document.getElementById('holdsForm');
+  const holdContainer = document.getElementById('holdContainer');
+  const holdTypeSelect = document.getElementById('hold_type_select');
+  const holdUseSelect = document.getElementById('hold_use_select');
+  const holdSize = document.getElementById('hold_size');
+  const deleteBtn = document.getElementById('delete_hold');
 
+  if (!holdsLabel || !holdsForm || !holdContainer) return;
 
-const holdContainer = document.getElementById("holdContainer");
-const holdTypeSelect = document.getElementById("hold_type_select");
-const holdUseSelect = document.getElementById("hold_use_select");
-const holdSize = document.getElementById("hold_size");
-const deleteBtn = document.getElementById("delete_hold");
+  const previousData = window.previous_data || {};
+  let holds = [];
+  let selectedHold = null;
+  let holdId = 0;
 
-let holds = [];
-let selectedHold = null;
-let holdId = 0;
+  function clamp(value) {
+    return Math.min(Math.max(value, 0), 1);
+  }
 
-
-holdContainer.addEventListener("pointerdown", (e)=>{
-
-    // se clicco su una presa gestisce lei l'evento
-    if(e.target.classList.contains("hold")) return;
-
-    // se esiste una presa selezionata → deseleziona
-    if(selectedHold){
-        deselectHold();
-        return;
-    }
-
-    // altrimenti crea una nuova presa
-    const rect = holdContainer.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-
-    const data = {
-        hold_id: holdId++,
-        x: x, y: y,
-        size: parseFloat(holdSize.value),
-        progression_id: holdTypeSelect.value,
-        constraint_id: holdUseSelect.value
-    };
-
-    let hold = createHold(data)
-    holds.push({element:hold,data:data});
+  function addExisting(data) {
+    const hold = createHold(data);
+    if (!hold) return;
+    holds.push({ element: hold, data });
     addHoldEvents(hold);
-});
+  }
 
-function addHoldEvents(hold){
-    hold.addEventListener("pointerdown",(e)=>{
-        e.stopPropagation();
-        selectHold(hold);
-        startDrag(e,hold);
+  const existing = Array.isArray(previousData.holds_array) ? previousData.holds_array : [];
+  existing.forEach((hold) => {
+    const data = {
+      hold_id: hold.hold_id ?? hold.id ?? holdId,
+      x: Number(hold.x),
+      y: Number(hold.y),
+      size: Number(hold.size),
+      progression_id: hold.progression_id,
+      constraint_id: hold.constraint_id
+    };
+    holdId = Math.max(holdId, Number(data.hold_id) + 1);
+    addExisting(data);
+  });
+
+  function addHoldEvents(hold) {
+    hold.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      selectHold(hold);
+      startDrag(event, hold);
     });
-}
+  }
 
-function selectHold(hold){
-    document.querySelectorAll(".hold").forEach(h=>h.classList.remove("selected"));
+  function selectHold(hold) {
+    document.querySelectorAll('.hold').forEach((item) => item.classList.remove('selected'));
+    hold.classList.add('selected');
+    selectedHold = hold;
 
-    hold.classList.add("selected");
-    selectedHold=hold;
+    const found = holds.find((item) => item.element === hold);
+    if (!found) return;
+    holdTypeSelect.value = found.data.progression_id;
+    holdUseSelect.value = found.data.constraint_id;
+    holdSize.value = String(found.data.size);
+    if (deleteBtn) deleteBtn.style.display = 'block';
+  }
 
-    const obj=holds.find(h=>h.element===hold);
+  function deselectHold() {
+    document.querySelectorAll('.hold').forEach((item) => item.classList.remove('selected'));
+    selectedHold = null;
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  }
 
-    deleteBtn.style.display = "block";  
+  function startDrag(event, hold) {
+    const rect = holdContainer.getBoundingClientRect();
+    hold.setPointerCapture(event.pointerId);
 
-    holdTypeSelect.value=obj.data.progression_id;
-    holdUseSelect.value=obj.data.constraint_id;
-    holdSize.value=obj.data.size;
-}
-
-function deselectHold(){
-    document.querySelectorAll(".hold").forEach(h=>h.classList.remove("selected"));
-    selectedHold=null;
-    deleteBtn.style.display = "none";
-}
-
-function startDrag(e,hold){
-    const rect=holdContainer.getBoundingClientRect();
-    hold.setPointerCapture(e.pointerId);
-    function move(ev){
-        let x=(ev.clientX-rect.left)/rect.width;
-        let y=(ev.clientY-rect.top)/rect.height;
-
-        x=Math.min(Math.max(x,0),1);
-        y=Math.min(Math.max(y,0),1);
-
-        hold.style.left=`${x*100}%`;
-        hold.style.top=`${y*100}%`;
-
-        const obj=holds.find(h=>h.element===hold);
-
-        obj.data.x=x;
-        obj.data.y=y;
+    function move(moveEvent) {
+      const x = clamp((moveEvent.clientX - rect.left) / rect.width);
+      const y = clamp((moveEvent.clientY - rect.top) / rect.height);
+      hold.style.left = `${x * 100}%`;
+      hold.style.top = `${y * 100}%`;
+      const found = holds.find((item) => item.element === hold);
+      if (found) {
+        found.data.x = x;
+        found.data.y = y;
+      }
     }
 
-    function up(){
-        hold.removeEventListener("pointermove",move);
-        hold.removeEventListener("pointerup",up);
+    function stop() {
+      hold.removeEventListener('pointermove', move);
+      hold.removeEventListener('pointerup', stop);
+      hold.removeEventListener('pointercancel', stop);
     }
 
-    hold.addEventListener("pointermove",move);
-    hold.addEventListener("pointerup",up);
-}
+    hold.addEventListener('pointermove', move);
+    hold.addEventListener('pointerup', stop);
+    hold.addEventListener('pointercancel', stop);
+  }
 
-// CAMBIO TIPO
-holdTypeSelect.addEventListener("change",()=>{
-    if(!selectedHold) return;
-
-    const obj=holds.find(h=>h.element===selectedHold);
-    obj.data.progression_id=holdTypeSelect.value;
-    updateHoldStyle(selectedHold, obj.data);
-});
-
-// CAMBIO USO
-holdUseSelect.addEventListener("change",()=>{
-    if(!selectedHold) return;
-
-    const obj=holds.find(h=>h.element===selectedHold);
-    obj.data.constraint_id=holdUseSelect.value;
-    updateConstraintStyle(selectedHold, obj.data)
-});
-
-// RIDIMENSIONA
-holdSize.addEventListener("input",()=>{
-    if(!selectedHold) return;
-
-    const obj=holds.find(h=>h.element===selectedHold);
-    obj.data.size=holdSize.value;
-    updateHoldStyle(selectedHold, obj.data);
-    updateConstraintStyle(selectedHold, obj.data)
-});
-
-// ELIMINA
-deleteBtn.addEventListener("click",()=>{
-    if(!selectedHold) return;
-
-    const index=holds.findIndex(h=>h.element===selectedHold);
-    selectedHold.remove();
-    holds.splice(index,1);
-    deleteBtn.style.display = "none";
-    selectedHold=null;
-});
-
-// clic fuori → deseleziona
-holdContainer.addEventListener("click",(e)=>{
-    if(e.target===holdContainer){
-        deselectHold();
+  holdContainer.addEventListener('pointerdown', (event) => {
+    if (event.target.classList.contains('hold')) return;
+    if (selectedHold) {
+      deselectHold();
+      return;
     }
+    const rect = holdContainer.getBoundingClientRect();
+    const data = {
+      hold_id: holdId++,
+      x: clamp((event.clientX - rect.left) / rect.width),
+      y: clamp((event.clientY - rect.top) / rect.height),
+      size: parseFloat(holdSize.value),
+      progression_id: holdTypeSelect.value,
+      constraint_id: holdUseSelect.value
+    };
+    addExisting(data);
+  });
+
+  holdTypeSelect.addEventListener('change', () => {
+    const found = holds.find((item) => item.element === selectedHold);
+    if (!found) return;
+    found.data.progression_id = holdTypeSelect.value;
+    updateHoldStyle(selectedHold, found.data);
+  });
+
+  holdUseSelect.addEventListener('change', () => {
+    const found = holds.find((item) => item.element === selectedHold);
+    if (!found) return;
+    found.data.constraint_id = holdUseSelect.value;
+    updateConstraintStyle(selectedHold, found.data);
+  });
+
+  holdSize.addEventListener('input', () => {
+    const found = holds.find((item) => item.element === selectedHold);
+    if (!found) return;
+    found.data.size = parseFloat(holdSize.value);
+    updateHoldStyle(selectedHold, found.data);
+    updateConstraintStyle(selectedHold, found.data);
+  });
+
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      if (!selectedHold) return;
+      const index = holds.findIndex((item) => item.element === selectedHold);
+      selectedHold.remove();
+      holds.splice(index, 1);
+      deselectHold();
+    });
+  }
+
+  holdsForm.addEventListener('submit', (event) => {
+    if (holds.length === 0) {
+      event.preventDefault();
+      holdsLabel.value = '';
+      alert('Seleziona almeno una presa prima di continuare.');
+      return;
+    }
+    holdsLabel.value = JSON.stringify(holds.map((item) => ({ data: item.data })));
+  });
 });
-
-// Carica le prese esistenti se il blocco esiste già
-if ("holds_array" in previous_data) {
-    previous_data["holds_array"].forEach(h => {
-        let data = {
-            hold_id: h.id,
-            x: h.x,
-            y: h.y,
-            size: h.size,
-            progression_id: h.progression_id,
-            constraint_id: h.constraint_id
-        };
-
-        let hold = createHold(data)
-        holds.push({element:hold,data:data});
-        addHoldEvents(hold);
-    })
-}

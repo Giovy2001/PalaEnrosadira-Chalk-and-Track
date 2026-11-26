@@ -1,44 +1,46 @@
 body {
-    touch-action:none;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+
 h1, h2, h3 {
-    margin: 0;
-    margin-bottom: 5px;
+    margin: 0 0 5px;
+}
+
+/* Il drag delle prese deve funzionare senza bloccare lo scroll della pagina.
+   touch-action e' limitato al contenitore, non a tutto il body. */
+#holdContainer {
+    touch-action: none;
 }
 
 .slider {
     margin: 5px;
-    -webkit-appearance: none;  /* Override default CSS styles */
+    -webkit-appearance: none;
     appearance: none;
-    width: 100%; /* Full-width */
-    height: 30px; /* Specified height */
+    width: 100%;
+    height: 30px;
     background: transparent;
     border: 2px solid white;
-    outline: none; /* Remove outline */
-    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
-    transition: opacity .2s;
+    outline: none;
+    transition: opacity 0.2s;
 }
+
 .slider::-webkit-slider-thumb {
-  -webkit-appearance: none; /* Override default look */
-  appearance: none;
-  width: 15px; /* Set a specific slider handle width */
-  height: 30px; /* Slider handle height */
-  background: white; /* Green background */
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 30px;
+    background: white;
 }
 
-button {
-    width: 100%;
+.slider::-moz-range-thumb {
+    width: 15px;
+    height: 30px;
+    background: white;
+    border: none;
 }
 
-.tableSelector {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    gap: 5px;
-}
 .step {
     display: none;
     width: 99%;
@@ -53,18 +55,19 @@ img#routeImage {
     display: block;
     margin: 0 auto;
 }
-input, textarea, select {
+
+.tableSelector {
     width: 100%;
-    height: 40px;
-    margin: 5px 0;
-    padding: 8px;
-    font-size: 24px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
-#delete_hold{
-    display:none;
+#delete_hold {
+    display: none;
 }
 
-.selected{
+.selected {
     outline: 3px solid rgb(255, 255, 255);
 }

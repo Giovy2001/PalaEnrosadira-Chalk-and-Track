@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - Archivio{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="/static/css/home/archive.css">
+{% endblock %}
+{% block content %}
+<div class="title">
+  <h1>PalaEnrosadira</h1>
+  <h3>Chalk &amp; Track &middot; Archivio</h3>
+</div>
+
+<form class="archive-filters" method="GET">
+  <input type="text" name="name" placeholder="Cerca per nome" value="{{ filters.name }}" aria-label="Cerca per nome">
+  <input type="text" name="author" placeholder="Autore" value="{{ filters.author }}" aria-label="Autore">
+  <select name="grade" aria-label="Grado">
+    <option value="">Tutti i gradi</option>
+    {% for grade in grades %}
+    <option value="{{ grade }}"{% if filters.grade == grade %} selected{% endif %}>{{ grade }}</option>
+    {% endfor %}
+  </select>
+  <button class="default-button" type="submit">Filtra</button>
+</form>
+
+<div class="grid">
+  {% for route in routes %}
+  <a href="/route_{{ route.route_id }}" class="card">
+    <img src="{{ route.image_url }}" alt="Foto della via {{ route.route_name }}">
+    <div class="card-title">{{ route.route_name }}</div>
+    <div class="card-author">{{ route.author }}{% if route.route_grade %} &middot; {{ route.route_grade }}{% endif %}</div>
+  </a>
+  {% else %}
+  <p class="empty-state">Nessun blocco trovato. Prova a modificare i filtri.</p>
+  {% endfor %}
+</div>
+
+<div class="use-condition">
+  <a href="/use_condition"><span class="icon">i</span> Condizioni di utilizzo</a>
+</div>
+{% endblock %}

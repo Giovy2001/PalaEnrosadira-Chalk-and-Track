@@ -2,71 +2,73 @@
     font-family: "Major Mono Display", monospace;
     text-align: center;
 }
+
 h1, h2, h3 {
     margin-top: 0;
     margin-bottom: 0;
     font-weight: inherit;
 }
-.userLabel {
-    margin-bottom: 4px;
-}
-.usernameWrapper {
+
+.archive-filters {
     display: flex;
-    gap: 0;
-}
-.new-route {
-    margin-top: 10px;
-    text-decoration: none;
-    color: inherit;
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
 }
 
+.archive-filters input,
+.archive-filters select {
+    flex: 1 1 140px;
+    min-width: 0;
+}
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px;
 }
+
 .card {
     background: transparent;
-    
-    border: 2px solid;
+    border: 2px solid white;
     border-radius: 0;
-
     outline: none;
-    border-color: white;
-    
     overflow: hidden;
     text-decoration: none;
     color: white;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    transition: 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .card:hover {
     transform: scale(1.03);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
+
 .card img {
+    display: block;
     margin: 6px;
-    width: calc(100% - 12px);;
+    width: calc(100% - 12px);
     height: 200px;
     object-fit: cover;
 }
+
 .card-title {
-    padding: 10px;
+    padding: 6px 10px 0;
     font-weight: bold;
-    line-height: 8px;
-    white-space: normal; 
-    word-break: break-word; 
+    line-height: 1.3;
+    white-space: normal;
+    word-break: break-word;
     overflow-wrap: break-word;
     margin: 0;
 }
 
 .card-author {
-    padding: 10px;
-    line-height: 0px;
+    padding: 0 10px 10px;
+    line-height: 1.4;
     font-size: small;
-    margin-top: 0;
-    margin-bottom: 10px;
+    color: var(--light);
+    margin: 0;
 }
 
 .use-condition {
@@ -75,9 +77,9 @@ h1, h2, h3 {
     text-decoration: none;
     color: inherit;
     text-align: center;
-    align-items: center;
-    line-height: 1;
+    line-height: 1.5;
 }
+
 .icon {
     display: inline-flex;
     justify-content: center;
@@ -89,7 +91,6 @@ h1, h2, h3 {
     color: #161616;
     font-size: 12px;
     font-weight: bold;
-    line-height: 1;
     position: relative;
     top: -2px;
     left: -4px;

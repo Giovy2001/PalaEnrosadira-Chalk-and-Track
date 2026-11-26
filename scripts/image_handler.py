@@ -1,180 +1,148 @@
-import vercel_blob
-from uuid import uuid4
-from PIL import Image, ImageOps
+"""Gestione delle immagini delle route: filesystem locale o Vercel Blob."""
+
+from __future__ import annotations
+
+import re
 from io import BytesIO
+from pathlib import Path
+from uuid import uuid4
+
+import settings
+import vercel_blob
+from PIL import Image, ImageOps
+
+upload_function_name: str = ""
+
 
 def init_glob_database() -> None:
-    """
-    Initialize the vercel glob database and set the upload function name.
-    """
     global upload_function_name
     upload_function_name = "blob"
 
+
 def init_local_database() -> None:
-    """
-    Initialize the local database and set the upload function name.
-    """
     global upload_function_name
     upload_function_name = "local"
 
-def put(image_full_name: str, image_data) -> str:
-    """
-    Processes the image to optimize it and commit it to the initialized database.
-    It supports deletion from two storage backends:
-    - 'blob': Deletes from Vercel Blob storage
-    - 'local': Deletes from the local filesystem
 
-    Args:
-        image_full_name (str): Name of the image
-        image_data (_type_): Image data retrived from the html request
+def _require_backend() -> str:
+    if upload_function_name not in UPLOAD_FUNCTIONS:
+        raise RuntimeError("ImageHandler non inizializzato o backend sconosciuto")
+    return upload_function_name
 
-    Returns:
-        str: url to the image in the database
-    """
-    
-    # Raise an error when  the ImageHandler is not initialized properly
-    if upload_function_name == "":
-        raise Exception("ERROR ImageHandler not initialized")
-    
-    image_name: str = image_full_name.split(".")[0]
-    image_name = "_".join(image_name.split(" "))
-    MAX_WIDTH: int = 1080
-    
-    # Import image and metadatas
-    img: Image.Image = Image.open(BytesIO(image_data))
+
+def _safe_name(image_full_name: str) -> str:
+    name = Path(str(image_full_name or "image")).stem
+    name = re.sub(r"[^A-Za-z0-9_-]+", "_", name).strip("_")
+    return name[:60] or "image"
+
+
+def put(image_full_name: str, image_data: bytes) -> str:
+    """Processa e salva un'immagine, restituendone URL/percorso."""
+
+    _require_backend()
+    if not image_data:
+        raise ValueError("File immagine vuoto")
+
+    image_name = _safe_name(image_full_name)
+    try:
+        img = Image.open(BytesIO(image_data))
+        img.load()
+    except Exception as exc:
+        raise ValueError("Il file caricato non è un'immagine valida") from exc
+
     img = ImageOps.exif_transpose(img)
-
-    # Remove transparancy if needed
-    if img.mode in ("RGBA", "P"):
+    if img.mode != "RGB":
         img = img.convert("RGB")
-        
-    # Scale the image to fit the given MAX_WIDTH
-    cropped_img: Image.Image = crop(img)
-    width, height = cropped_img.size
-    if width > MAX_WIDTH:
-        new_height = int((MAX_WIDTH / width) * height)
-        cropped_img = cropped_img.resize((MAX_WIDTH, new_height), Image.LANCZOS)
 
-    # Returns the result of the commit function
+    cropped_img = crop(img)
+    max_width = 1080
+    width, height = cropped_img.size
+    if width > max_width:
+        new_height = max(1, int((max_width / width) * height))
+        cropped_img = cropped_img.resize((max_width, new_height), Image.LANCZOS)
+
     return UPLOAD_FUNCTIONS[upload_function_name](image_name, cropped_img)
 
-def list() -> list:
-    """
-    Retrieve a list of URLs from the configured storage backend.
-    Dynamically fetches URLs based on the `upload_function_name` configuration:
-    - "blob": Retrieves URLs from Vercel Blob storage
-    - "local": Retrieves file paths from local storage directory
-    
-    Returns:
-        list: A list of URLs or file paths from the storage backend.
-    Note:
-        The actual storage backend used is determined by the `upload_function_name`
-        variable, which must be set in the calling scope.
-    """
-    
-    match upload_function_name:
-        case "blob":
-            urls = [i["url"] for i in vercel_blob.list()["blobs"]]
-        case "local":
-            from glob import glob
-            urls = glob(r"static\local_database\Images\*")
-      
-    return urls
-        
+
+def list() -> list[str]:
+    """Elenca tutti gli URL/percorsi delle immagini salvate."""
+
+    backend = _require_backend()
+    if backend == "blob":
+        urls: list[str] = []
+        cursor = None
+        # Limite di sicurezza per evitare loop infiniti in caso di API anomalo.
+        for _ in range(100):
+            options = {"limit": 1000}
+            if cursor:
+                options["cursor"] = cursor
+            response = vercel_blob.list(options)
+            urls.extend(item["url"] for item in response.get("blobs", []))
+            cursor = response.get("cursor")
+            if not cursor:
+                break
+        return urls
+
+    return [
+        path.as_posix()
+        for path in Path(settings.LOCAL_IMAGES_DIR).glob("*")
+        if path.is_file()
+    ]
+
+
 def delete(image_url: str) -> None:
-    """
-    Delete an image from the specified storage service.
-    This function removes an image based on the configured upload function.
-    It supports deletion from two storage backends:
-    - 'blob': Deletes from Vercel Blob storage
-    - 'local': Deletes from the local filesystem
-    
-    Args:
-        image_url (str): The URL or path of the image to delete.
-                        For blob storage: the blob URL or identifier.
-                        For local storage: the file path to the image.
-    Returns:
-        None
-    Raises:
-        FileNotFoundError: If the local file does not exist (local storage only).
-        Exception: If deletion from Vercel Blob fails (blob storage only).
-    Note:
-        The actual storage backend used is determined by the `upload_function_name`
-        variable, which must be set in the calling scope.
-    """
-    
-    match upload_function_name:
-        case "blob":
-            vercel_blob.delete(image_url)
-        case "local":
-            from os import remove
-            remove(image_url)
+    """Elimina un'immagine dal backend configurato."""
+
+    backend = _require_backend()
+    if not image_url:
+        return
+    if backend == "blob":
+        vercel_blob.delete(image_url)
+        return
+
+    path = Path(str(image_url).replace("\\", "/"))
+    if not path.is_absolute():
+        path = Path(settings.BASE_DIR) / path
+    if path.is_file():
+        path.unlink()
+
 
 def local_commit(image_name: str, img: Image.Image) -> str:
-    """
-    Commit the image to the local database and returns its path.
+    """Salva l'immagine su disco e restituisce il percorso relativo."""
 
-    Args:
-        image_name (str): Name of the image
-        img (Image.Image): PIL image type
+    images_dir = Path(settings.LOCAL_IMAGES_DIR)
+    images_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{image_name}_{uuid4()}.jpg"
+    path = images_dir / filename
+    img.save(path, format="JPEG", quality=85, optimize=True)
+    return f"static/local_database/Images/{filename}"
 
-    Returns:
-        str: path of the image relative to the webapp
-    """
-    
-    path: str = f"static\\local_database\\images\\{image_name}_{uuid4()}.jpg"
-    img.save(path)
-    return path
 
 def blob_commit(image_name: str, img: Image.Image) -> str:
-    """
-    Commit the image to the vercel blob database and returns its url.
-
-    Args:
-        image_name (str): Name of the image
-        img (Image.Image): PIL image type
-
-    Returns:
-        str: url of the image in the database
-    """
-    
-    # Salva l'immagine in un buffer
     buffer = BytesIO()
     img.save(buffer, format="JPEG", quality=85, optimize=True)
-    image_bytes = buffer.getvalue()
-    
-    # Commit to the vercel blob database
-    return vercel_blob.put(f"{image_name}.jpg", image_bytes, {"addRandomSuffix": "true"}).get("url")
+    response = vercel_blob.put(
+        f"{image_name}.jpg", buffer.getvalue(), {"addRandomSuffix": "true"}
+    )
+    return response["url"]
+
 
 def crop(img: Image.Image) -> Image.Image:
-    """
-    Crop an image to a 2:3 (width:height) vertical aspect ratio.
-    Maintains the center of the original image while removing excess width or height
-    as needed to achieve the target aspect ratio.
-    Args:
-        img (Image.Image): The PIL Image object to crop.
-    Returns:
-        Image.Image: A new Image object cropped to 2:3 aspect ratio.
-    """
-    
-    W, H = img.size    
+    """Ritaglia al centro con proporzione 7:10 (width:height)."""
+
+    width, height = img.size
     target_ratio = 7 / 10
-    current_ratio = W / H
-
+    current_ratio = width / height
     if current_ratio > target_ratio:
-        new_W = int(H * target_ratio)
-        new_H = H
+        new_width = int(height * target_ratio)
+        new_height = height
     else:
-        new_W = W
-        new_H = int(W / target_ratio)
+        new_width = width
+        new_height = int(width / target_ratio)
 
-    left = (W - new_W) // 2
-    top = (H - new_H) // 2
-    right = left + new_W
-    bottom = top + new_H
+    left = (width - new_width) // 2
+    top = (height - new_height) // 2
+    return img.crop((left, top, left + new_width, top + new_height))
 
-    return img.crop((left, top, right, bottom))
 
-""" Dictionary containg all the functions used to commit changes to the databases """
-UPLOAD_FUNCTIONS: dict = {"blob":blob_commit, "local":local_commit}
-upload_function_name: str = ""
+UPLOAD_FUNCTIONS: dict = {"blob": blob_commit, "local": local_commit}

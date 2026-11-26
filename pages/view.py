@@ -1,26 +1,65 @@
-from flask import redirect, render_template, request, url_for
-from scripts import image_handler
-from scripts.database_sql import sql_routes, sql_holds
-import json
-import global_values
+"""Visualizzazione e azioni sulla singola route."""
 
-def view_route(route_id):
-    route_object: dict = sql_routes.get_route(global_values.conn, route_id)
-    holds_array: list[dict]  = sql_holds.get_holds(global_values.conn, route_id)
+from __future__ import annotations
+
+import logging
+
+from flask import abort, redirect, render_template, request, url_for
+
+import global_values
+from route_constants import GRADES, POINTS_PER_COMPLETED_ROUTE
+from scripts import image_handler
+from scripts.database_sql import sql_betas, sql_holds, sql_routes, sql_users
+from utils import auth
+
+logger = logging.getLogger(__name__)
+
+
+def _load_route(route_id: int) -> dict:
+    route = sql_routes.get_route(global_values.get_connection(), route_id)
+    if route is None:
+        abort(404)
+    return route
+
+
+def view_route(route_id: int):
+    conn = global_values.get_connection()
+    route = _load_route(route_id)
+    username = auth.current_username()
 
     if request.method == "POST":
-        if 'authorName' in request.form:
-            return redirect(url_for(f"edit_name_description", route_id=route_object["route_id"], route_object=json.dumps(route_object)))
-            
-        elif 'authorHolds' in request.form:
-            return redirect(url_for(f"edit_holds", route_id=route_object["route_id"], holds_array=json.dumps(holds_array), image_url=route_object["image_url"]))
-            
-        elif 'authorDelete' in request.form:
-            image_handler.delete(route_object["image_url"])
-            sql_routes.del_route(global_values.conn, route_object["route_id"])
-            return redirect(url_for("index"))
+        if "completeRoute" in request.form:
+            user = auth.require_user()
+            user_data = sql_users.get_user(conn, user)
+            completed = list(user_data.get("serialized_completed_routes") or [])
+            if route_id not in completed:
+                completed.append(route_id)
+                sql_users.edit_completed_routes(conn, user, completed)
+                sql_users.add_points(conn, user, POINTS_PER_COMPLETED_ROUTE)
+            return redirect(url_for("view_route", route_id=route_id))
 
-    return render_template("view.html",
-        route=route_object,
-        holds=holds_array
+        route, username = auth.require_author(route_id)
+
+        if "authorName" in request.form:
+            return redirect(url_for("edit_name_description", route_id=route_id))
+        if "authorHolds" in request.form:
+            return redirect(url_for("edit_holds", route_id=route_id))
+        if "authorDelete" in request.form:
+            image_url = route["image_url"]
+            sql_routes.del_route(conn, route_id)  # transazione DB prima
+            try:
+                image_handler.delete(image_url)
+            except Exception:
+                logger.exception("Impossibile eliminare l'immagine %s", image_url)
+            return redirect(url_for("render_home_archive"))
+        abort(400)
+
+    return render_template(
+        "view.html",
+        route=route,
+        holds=sql_holds.get_holds(conn, route_id),
+        betas=sql_betas.get_betas(conn, route_id),
+        is_author=bool(username and username == route["author"]),
+        current_user=username,
+        grades=GRADES,
     )

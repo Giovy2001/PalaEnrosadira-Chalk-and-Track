@@ -1,46 +1,48 @@
-/* Change color of the body for light mode */
+/* La vista del blocco usa un tema chiaro per leggere meglio le prese. */
 body {
     background-color: #DCD3C8;
     color: #161616;
-    height: 120%;
 }
-button {
+
+.default-button {
     background-color: #161616;
     border-color: #161616;
     color: white;
 }
+
 .grain {
     mix-blend-mode: soft-light;
     opacity: 1;
 }
+
 .background_color {
     background-color: #DCD3C8;
 }
 
-
-/* Header - Title, Author and Description */
+/* Header - Titolo, autore e descrizione */
 .title {
     display: flex;
     flex-direction: column;
     align-items: center;
-    line-height: 20px;
+    line-height: 1.4;
 }
+
 .author, .description {
     font-size: medium;
     margin-bottom: 10px;
 }
+
 .container {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 10px 0;
     border: 2px solid #161616;
-    padding-left: 10px;
+    padding: 10px;
 }
+
 h1, h2 {
     margin: 0;
     margin-top: 10px;
 }
 
-/* Image */
 img#routeImage {
     max-width: 100%;
     height: auto;
@@ -55,45 +57,61 @@ img#routeImage {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
+
+.legend-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
 .legend-item {
     display: flex;
     align-items: center;
     gap: 16px;
 }
+
+.label {
+    font-size: 0.9rem;
+}
+
 .dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
+    flex: none;
 }
-.use_character {
-    width: 12px;
-    text-align: center;
-}
-.dot.start{ background-color:rgba(0, 255, 13, 0.5); }
-.dot.middle{ background-color:rgba(0, 153, 255, 0.5); }
-.dot.top{ background-color:rgba(255, 0, 0, 0.5); }
 
-/* Pulsanti autore */
-.authorButtons {
-    margin-top: 30px;
-    display: none;
+.use_character {
+    width: 24px;
+    text-align: center;
+    font-weight: bold;
 }
-#deleteButton, #editButton {
-    position: relative;
-    margin-top: 5px;
-    bottom: 0;
-    width: 100%;
+
+.dot.start { background-color: rgba(0, 255, 13, 0.5); }
+.dot.middle { background-color: rgba(0, 153, 255, 0.5); }
+.dot.zone { background-color: rgba(255, 170, 0, 0.6); }
+.dot.top { background-color: rgba(255, 0, 0, 0.5); }
+
+/* Azioni */
+.action-forms {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
-#deleteButton {
-    background-color: #CE2949;
-    border-color: #CE2949;
-    color: white;
+
+.beta {
+    border-left: 3px solid var(--primary);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
 }
-#deleteButton:active {
-    background-color: #582841;
-    border-color: #582841;
-    box-shadow: 0 0 10px #ffffff88;
+
+.beta p {
+    white-space: pre-wrap;
+    margin: 0.25rem 0 0;
 }
+
 .spacer {
-    height: 80px;
+    height: 20px;
 }

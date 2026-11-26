@@ -1,47 +1,61 @@
 body {
     /* Font */
-    font-family: "Fredoka", sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-optical-sizing: auto;
     font-style: normal;
     color: white;
 
-    /* Avoid hold click */
+    /* Evita la selezione accidentale durante il drag delle prese */
     -webkit-touch-callout: none;
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* Internet Explorer */
-    user-select: none; /* Standard syntax */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 
-    /* Backgound and margin */
-    background-color: #1C2026;
-    margin: 20px;
+    background-color: var(--very-dark);
+    margin: 0;
+    padding: 20px 20px 90px; /* spazio per la bottom nav */
+    box-sizing: border-box;
 }
 
-/* background grain multiply */
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
+/* Sfondo */
 .background_color {
     background-color: #2e343f;
     position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
+    inset: 0;
     z-index: -2;
 }
 
+/* Grain generato localmente: nessuna dipendenza da URL esterni. */
 .grain {
     position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
+    inset: 0;
     z-index: -1;
-   
-    background-image: url(https://upload.wikimedia.org/wikipedia/commons/5/5c/Image_gaussian_noise_example.png);
-    background-size: 300px 530px; 
-    mix-blend-mode: multiply;
-    opacity: 0.8;
+    pointer-events: none;
+    opacity: 0.25;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
 
-/* paragraph used to adjust spacing */
 p {
     margin: 5px;
+}
+
+.form-error {
+    color: var(--warning-light);
+    border: 1px solid var(--warning);
+    padding: 8px 12px;
+    margin: 10px 0;
+}
+
+.empty-state {
+    opacity: 0.7;
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 12px 12px 84px;
+    }
 }

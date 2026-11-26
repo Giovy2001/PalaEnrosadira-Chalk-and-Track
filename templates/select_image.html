@@ -1,32 +1,23 @@
-<head>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400&display=swap" rel="stylesheet">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PalaEnrosadira - Seleziona foto</title>
+{% extends "base.html" %}
+{% block title %}Chalk &amp; Track - Seleziona foto{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="/static/css/create.css">
+{% endblock %}
+{% block content %}
+<h2>Creazione Blocco</h2>
+<h3>Seleziona Foto</h3>
 
-    <link rel="stylesheet" href="/static/css/body.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/input.css" type="text/css">
-    <link rel="stylesheet" href="/static/css/create.css" type="text/css">
-</head>
-
-<!-- Background grain -->
-<div class="grain"></div>
-
-<body>
-    <h2>Creazione Blocco</h2>
-    <h3>Seleziona Foto</h3>
-</body>
-
-
-<!-- TODO nascondere il vero file e creare una label sopra penso -->
+{% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
 
 <form method="POST" enctype="multipart/form-data">
-    <input type="file" name="image" accept="image/*" id="imageInput">
-    <h4>Non chiudere la pagina mentre carica l'immagine nel database</h4>
-    <div class="controls">
-        <button id="next1">Continua</button>
-    </div>
+  {% if auth_token %}<input type="hidden" name="auth_token" value="{{ auth_token }}">{% endif %}
+  <label for="imageInput">Foto della via</label>
+  <input type="file" name="image" accept="image/*" id="imageInput" required>
+  <h4>Non chiudere la pagina mentre carica l'immagine nel database</h4>
+  <div class="controls">
+    <button id="next1" class="default-button" type="submit">Continua</button>
+  </div>
 </form>
+<a class="back-link" href="/archive">Annulla</a>
+{% endblock %}

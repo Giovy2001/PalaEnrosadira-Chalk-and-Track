@@ -1,4 +1,35 @@
-UPDATE #2.5 - GitHub Restyling
+# UPDATE #8 - Deploy, sicurezza e completamento funzionalità ✅
+
+Completato sul branch `develop`. Dettagli nel piano: `~/.opencode/plan/chalk-and-track-piano-completamento.md`.
+
+    [x] Sblocco deploy: main.py riscritto (nessun TypeError), modalità DB scelta prima della connessione
+    [x] Configurazione centralizzata in settings.py + app factory in app.py
+    [x] Endpoint /health
+    [x] Cron /api/database_cleanup protetto con CRON_SECRET e force modalità remota
+    [x] .gitignore versionato; .pyc rimossi da git; token da ruotare su Vercel
+    [x] Dipendenze pinnate (requirements.txt / requirements-dev.txt)
+    [x] Migrazioni versionate e idempotenti (schema_migrations): NON serve più droppare le tabelle
+    [x] Transazioni con rollback; del_route rimuove anche bete e immagini
+    [x] Date ISO 8601; get_route inesistente → 404
+    [x] Identità server-side (sessione + token firmato); require_author su modifica/eliminazione
+    [x] Whitelist color_id e username; get_profile gestisce utente inesistente
+    [x] Profilo reale: punti, gradi, blocchi creati e completati dal DB
+    [x] Grado aggiunto al salvataggio e alla modifica
+    [x] Creazione/modifica prese robusta (submit, pointercancel, hold_id, size numerico)
+    [x] Esplora e Archivio funzionanti con filtri
+    [x] Betas: CRUD corretto + endpoint JSON di inserimento
+    [x] Template base condiviso, nav su tutte le pagine, CSS ripulito, manifest PWA completato
+    [x] Test pytest (18 test) + GitHub Actions CI
+    [x] readme.md aggiornato
+
+    [ ] Rimangono fuori dallo scope attuale:
+        [ ] Ricerca fuzzy nell'archivio (per ora solo LIKE %nome%)
+        [ ] Feed fullscreen stile TikTok per Esplora
+        [ ] Accettazione obbligatoria delle condizioni d'uso prima della creazione utente
+
+---
+
+# UPDATE #2.5 - GitHub Restyling
     this will be merged to main with update #3
 
     [x] Create readme
