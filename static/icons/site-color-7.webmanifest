@@ -1,0 +1,19 @@
+{
+  "name": "Chalk & Track - PalaEnrosadira",
+  "short_name": "Chalk & Track",
+  "description": "Traccia e condividi i blocchi di arrampicata della palestra.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icons/profile/Icon_7.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#E9C46A",
+  "background_color": "#0C0E10",
+  "display": "standalone"
+}

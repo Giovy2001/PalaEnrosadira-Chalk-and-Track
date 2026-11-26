@@ -65,10 +65,23 @@ def issue_token(username: str) -> str:
 
 
 def login(username: str, token: str | None = None) -> None:
-    session.clear()
+    """Imposta l'identità senza perdere lo stato temporaneo della creazione.
+
+    I form includono il token firmato per sopravvivere a un cold start: se
+    l'identità è già la stessa, riscrivere la sessione cancellerebbe
+    ``pending_image_url`` e ``pending_holds`` a metà del flusso.
+    """
+
+    previous = current_username()
+    if previous and previous != username:
+        for key in ("pending_image_url", "pending_holds"):
+            session.pop(key, None)
+
     session["username"] = username
     if token:
         session["auth_token"] = token
+    else:
+        session.pop("auth_token", None)
     session.permanent = True
 
 
@@ -90,15 +103,19 @@ def restore_from_request() -> str | None:
     una sessione gia' autenticata.
     """
 
+    # Il token non viene accettato nella query string: finirebbe nei log e
+    # nella cronologia del browser. Solo header, body form o sessione.
     token = (
         request.headers.get("X-Auth-Token")
         or request.form.get("auth_token")
-        or request.args.get("auth_token")
     )
     if token:
         username = verify_token(token)
         if username:
-            login(username, token)
+            # Non riscrivere la sessione quando è già autenticata con lo stesso
+            # token: i form inviano il token a ogni step della creazione.
+            if session.get("username") != username or session.get("auth_token") != token:
+                login(username, token)
             return username
 
     return current_username()

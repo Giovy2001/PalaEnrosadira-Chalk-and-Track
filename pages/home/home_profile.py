@@ -13,10 +13,13 @@ from utils import auth
 def render_home_profile():
     if request.method == "POST":
         current = auth.require_user()
-        new_username = (request.form.get("username-input") or "").strip()
-        if not new_username:
+        try:
+            new_username = sql_users.validate_new_username(
+                request.form.get("username-input")
+            )
+        except ValueError as exc:
             return render_template(
-                "home/profile.html", error="Inserisci un nome utente", grades=GRADES
+                "home/profile.html", error=str(exc), grades=GRADES
             ), 400
 
         user_data = sql_users.get_user(global_values.get_connection(), new_username)
@@ -47,10 +50,13 @@ def render_home_profile():
 
 def render_create_user():
     if request.method == "POST":
-        username = (request.form.get("username-input") or "").strip()
-        if not username:
+        try:
+            username = sql_users.validate_new_username(
+                request.form.get("username-input")
+            )
+        except ValueError as exc:
             return render_template(
-                "create_user.html", username="", error="Inserisci un nome utente"
+                "create_user.html", username="", error=str(exc)
             ), 400
 
         try:

@@ -48,6 +48,7 @@ python main.py                  # http://127.0.0.1:8080
 La modalità locale viene rilevata da `APP_ENV=local` (predefinito fuori da Vercel).
 Il database locale si trova in `static/local_database/sql_database.db`.
 Per azzerarlo: `python static/local_database/wipe_database.py`.
+Le icone PWA e quelle dei 8 colori profilo si rigenerano con `python scripts/generate_icons.py`.
 
 ### Test
 

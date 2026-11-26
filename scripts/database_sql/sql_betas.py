@@ -83,14 +83,18 @@ def del_betas(conn: libsql.Connection, route_id: int) -> None:
 ### INIT
 
 
-def init_betas_table(conn: libsql.Connection) -> None:
-    conn.cursor().execute(
-        """CREATE TABLE IF NOT EXISTS betas(
+def create_table_sql(table_name: str = "betas") -> str:
+    """DDL della tabella bete, usata anche dalla migrazione delle FK."""
+
+    return f"""CREATE TABLE IF NOT EXISTS {table_name}(
         beta_id INTEGER PRIMARY KEY AUTOINCREMENT,
         route_id INTEGER,
         title TEXT,
         body TEXT,
-        FOREIGN KEY (route_id) REFERENCES routes(route_id)
+        FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE CASCADE
     )"""
-    )
+
+
+def init_betas_table(conn: libsql.Connection) -> None:
+    conn.cursor().execute(create_table_sql())
     conn.commit()

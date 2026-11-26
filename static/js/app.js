@@ -9,7 +9,8 @@ function getCookie(name) {
 function updateBottomNav() {
   const item = document.getElementById('create-button-hidden');
   if (!item) return;
-  const username = localStorage.getItem('chalk_and_track_username');
+  // La fonte di verità è l'identità rendersizzata dal server, non localStorage.
+  const username = window.APP_USER || null;
   item.style.display = username ? 'flex' : 'none';
 }
 
@@ -44,9 +45,11 @@ async function bootstrapAuth() {
       });
       if (response.ok) {
         const data = await response.json();
+        window.APP_USER = data.username;
         rememberSession(data.username, data.auth_token);
       } else {
         localStorage.removeItem('chalk_and_track_token');
+        localStorage.removeItem('chalk_and_track_username');
       }
     } catch (error) {
       console.warn('Login automatico non riuscito', error);
@@ -55,6 +58,15 @@ async function bootstrapAuth() {
   updateBottomNav();
 }
 
-document.addEventListener('DOMContentLoaded', bootstrapAuth);
+let resolveAuthReady;
+window.authReady = new Promise((resolve) => { resolveAuthReady = resolve; });
+
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await bootstrapAuth();
+  } finally {
+    resolveAuthReady();
+  }
+});
 window.updateBottomNav = updateBottomNav;
 window.appFetch = appFetch;

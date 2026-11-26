@@ -3,13 +3,20 @@
 let currentColorId = 0;
 
 function paletteColor(colorId) {
-  const cssVar = `--user-color-${colorId + 1}`;
-  return getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+  const cssVar = `--user-color-${Number(colorId) + 1 || 1}`;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+  return value || '#3A86FF';
 }
 
 function updateWebsiteIcon(colorId) {
-  const icon = document.getElementById('apple-icon');
-  if (icon) icon.href = `/static/icons/profile/Icon_${colorId}.png?v=${colorId}`;
+  const id = Number(colorId) || 0;
+  const iconUrl = `/static/icons/profile/Icon_${id}.png?v=${id}`;
+  for (const elementId of ['apple-icon', 'favicon-32', 'favicon-16']) {
+    const link = document.getElementById(elementId);
+    if (link) link.href = iconUrl;
+  }
+  const manifest = document.getElementById('manifest');
+  if (manifest) manifest.href = `/static/icons/site-color-${id}.webmanifest`;
 }
 
 function applyColor(colorId) {

@@ -1,3 +1,78 @@
+# FIX - CSS della bottom nav e dell'archivio mancanti
+
+    [x] Ripristinato `static/css/bottom-nav.css` (linkato da base.html ma assente):
+        nav fissa in basso, voci allineate, stato attivo e safe-area iOS
+    [x] Ripristinato `static/css/home/archive.css` (_linked_ ma assente)
+    [x] Test che verifica che tutti i CSS linkati dalle pagine pubbliche siano serviti
+
+---
+
+# FIX - Creazione blocco bloccata al passaggio prese → nome
+
+    [x] `auth.restore_from_request()` non riscrive più la sessione quando il token
+        inviato dal form è già quello autenticato: non cancella più
+        `pending_image_url` e `pending_holds` durante il flusso di creazione
+    [x] `login()` conserva lo stato temporaneo quando l'identità resta la stessa;
+        lo ripulisce solo in caso di cambio utente
+    [x] Test end-to-end: upload → prese → finalizza → salvataggio → archivio
+
+---
+
+# UPDATE #11 - Fase 3: profilo e statistiche reali ✅
+
+Completata sul branch `unstable`. La logica dati era già presente; sono stati ripristinati gli asset mancanti e aggiunti test di accettazione.
+
+    [x] Grado salvato in creazione/modifica e mostrato nel profilo (mappa gradi
+        condivisa dal server tramite `window.GRADES`)
+    [x] Blocchi completati e "I miei blocchi" letti dal DB, con stati vuoti espliciti
+    [x] Punti assegnati una sola volta per completamento e `last_seen_date` aggiornato
+    [x] Ripristinato `static/css/palette.css` (linkato ma assente): ciclo colore 0→7→0
+        con swatch, avatar, favicon, icone PWA e manifest per colore sincronizzati
+    [x] Generate icone mancanti (PWA + 8 profili) via `scripts/generate_icons.py`
+    [x] Manifest completo (`name`, `start_url`, `scope`, display standalone)
+    [x] Zero immagini esterne Stitch nelle pagine del profilo
+    [x] Test pytest: asset/PWA, punteggio una sola volta, gradi, limiti colore,
+        profilo da dati server (33 test totali)
+
+---
+
+# UPDATE #10 - Fase 2: identità e autorizzazione server-side ✅
+
+Completata sul branch `unstable`, con verifica delle difese già presenti e chiusura dei residui lato UI/validazione.
+
+    [x] Sessione Flask firmata + token opaco firmato; localStorage solo preferenza UI/cache
+    [x] Identità del server injectata in `window.APP_USER`: nav e profilo non leggono più
+        il nome utente da localStorage come fonte di verità; il profilo attende il
+        ripristino asincrono della sessione prima di decidere se redirectare
+    [x] Token non accettato più nella query string (solo header, form e sessione)
+    [x] require_author su /route_<id> POST, /edit_route_<id> e /edit_holds_<id>
+    [x] Verifica esistenza utente nel DB a ogni richiesta autenticata
+    [x] Username non vuoto, unico, max 40 caratteri e senza caratteri di controllo;
+        errori visibili nelle pagine di creazione/aggiornamento profilo
+    [x] Nessun auto-submit del nome a ogni tasto; invio solo tramite pulsante
+    [x] Whitelist color_id (0-7); get_profile risponde JSON anche per utente assente
+    [x] Test pytest: token in query ignorato, sessione senza token, autorizzazione
+        su prese, colore altrui bloccato, username lungo rifiutato (28 test totali)
+
+---
+
+# UPDATE #9 - Fase 1: fondamenta dati affidabili ✅
+
+Completata sul branch `unstable`. Il grosso della fase era già presente; sono stati chiusi i gap rimasti e aggiunti i test di accettazione.
+
+    [x] Migrazioni versionate e idempotenti (schema_migrations, ora alla versione 4)
+    [x] PRAGMA foreign_keys=ON e ON DELETE CASCADE su holds/betas, con ricostruzione
+        delle tabelle esistenti senza perdita di dati (migrazione 4)
+    [x] Indici su routes.author, routes.creation_date, holds.route_id, betas.route_id
+    [x] Transazioni con rollback su add_route, add_holds, edit_holds, del_route
+    [x] del_route rimuove anche le bete; immagine eliminata solo dopo il commit
+    [x] Date ISO 8601, whitelist degli UPDATE dinamici, 404 per route inesistente
+    [x] JSON di prese/immagine passato via POST body e sessione, non più in query string
+    [x] Test pytest: ordinamento cronologico, cascade delle FK, rollback, idempotenza
+        delle migrazioni e upgrade da schema storico (22 test totali)
+
+---
+
 # UPDATE #8 - Deploy, sicurezza e completamento funzionalità ✅
 
 Completato sul branch `develop`. Dettagli nel piano: `~/.opencode/plan/chalk-and-track-piano-completamento.md`.

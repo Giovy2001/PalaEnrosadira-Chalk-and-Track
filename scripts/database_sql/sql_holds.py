@@ -125,9 +125,10 @@ def del_holds(conn: libsql.Connection, route_id: int) -> None:
 ### INIT
 
 
-def init_holds_table(conn: libsql.Connection) -> None:
-    conn.cursor().execute(
-        """CREATE TABLE IF NOT EXISTS holds(
+def create_table_sql(table_name: str = "holds") -> str:
+    """DDL della tabella prese, usata anche dalla migrazione delle FK."""
+
+    return f"""CREATE TABLE IF NOT EXISTS {table_name}(
         hold_id INTEGER PRIMARY KEY AUTOINCREMENT,
         route_id INTEGER,
         x REAL,
@@ -135,7 +136,10 @@ def init_holds_table(conn: libsql.Connection) -> None:
         size REAL,
         progression_id TEXT,
         constraint_id TEXT,
-        FOREIGN KEY (route_id) REFERENCES routes(route_id)
+        FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE CASCADE
     )"""
-    )
+
+
+def init_holds_table(conn: libsql.Connection) -> None:
+    conn.cursor().execute(create_table_sql())
     conn.commit()

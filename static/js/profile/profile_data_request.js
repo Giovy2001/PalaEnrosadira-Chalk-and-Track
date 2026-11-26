@@ -6,7 +6,8 @@ const TAG_THRESHOLDS = [
 ];
 
 function getUsername() {
-  return window.PROFILE_USER || window.APP_USER || localStorage.getItem('chalk_and_track_username');
+  // Nessun fallback a localStorage: l'identità arriva sempre dal server.
+  return window.PROFILE_USER || window.APP_USER || null;
 }
 
 function getHighestGrade(routes) {
@@ -84,6 +85,9 @@ function setRoutesData(routes, completed) {
 }
 
 async function requestProfileData() {
+  // Con token salvato lato client la sessione viene ripristinata in async:
+  // attendere prima di decidere che non esiste un'identità server-side.
+  if (window.authReady) await window.authReady;
   const username = getUsername();
   if (!username) {
     window.location.href = '/create_user';

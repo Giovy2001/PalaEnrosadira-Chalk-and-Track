@@ -17,8 +17,9 @@ from scripts.database_sql import (
     sql_routes,
     sql_users,
 )
+from scripts.database_sql.transaction import atomic
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def _columns(conn: libsql.Connection, table: str) -> set[str]:
@@ -36,6 +37,17 @@ def _table_exists(conn: libsql.Connection, table: str) -> bool:
         "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
     ).fetchone()
     return row is not None
+
+
+def _table_sql(conn: libsql.Connection, table: str) -> str:
+    row = conn.cursor().execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone()
+    return str(row[0]) if row and row[0] is not None else ""
+
+
+def _has_on_delete_cascade(conn: libsql.Connection, table: str) -> bool:
+    return "ON DELETE CASCADE" in _table_sql(conn, table).upper()
 
 
 def _applied_versions(conn: libsql.Connection) -> set[int]:
@@ -95,7 +107,46 @@ def _migration_3(conn: libsql.Connection) -> None:
     )
 
 
-MIGRATIONS = {1: _migration_1, 2: _migration_2, 3: _migration_3}
+def _migration_4(conn: libsql.Connection) -> None:
+    """Aggiunge ON DELETE CASCADE alle tabelle figlie.
+
+    SQLite non permette di modificare una FK con ALTER TABLE: le tabelle
+    vengono ricreate mantenendo dati, ID e indici.
+    """
+
+    if not _has_on_delete_cascade(conn, "holds"):
+        with atomic(conn) as cursor:
+            cursor.execute("DROP TABLE IF EXISTS holds_cascade")
+            cursor.execute(sql_holds.create_table_sql("holds_cascade"))
+            cursor.execute(
+                "INSERT INTO holds_cascade "
+                "(hold_id, route_id, x, y, size, progression_id, constraint_id) "
+                "SELECT hold_id, route_id, x, y, size, progression_id, constraint_id "
+                "FROM holds"
+            )
+            cursor.execute("DROP TABLE holds")
+            cursor.execute("ALTER TABLE holds_cascade RENAME TO holds")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_holds_route ON holds(route_id)")
+
+    if not _has_on_delete_cascade(conn, "betas"):
+        with atomic(conn) as cursor:
+            cursor.execute("DROP TABLE IF EXISTS betas_cascade")
+            cursor.execute(sql_betas.create_table_sql("betas_cascade"))
+            cursor.execute(
+                "INSERT INTO betas_cascade (beta_id, route_id, title, body) "
+                "SELECT beta_id, route_id, title, body FROM betas"
+            )
+            cursor.execute("DROP TABLE betas")
+            cursor.execute("ALTER TABLE betas_cascade RENAME TO betas")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_betas_route ON betas(route_id)")
+
+
+MIGRATIONS = {
+    1: _migration_1,
+    2: _migration_2,
+    3: _migration_3,
+    4: _migration_4,
+}
 
 
 def run_migrations(conn: libsql.Connection) -> None:

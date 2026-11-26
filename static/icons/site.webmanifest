@@ -1,25 +1,25 @@
 {
-    "name": "Chalk & Track - PalaEnrosadira",
-    "short_name": "Chalk & Track",
-    "description": "Traccia e condividi i blocchi di arrampicata della palestra.",
-    "lang": "it",
-    "start_url": "/",
-    "scope": "/",
-    "icons": [
-        {
-            "src": "/static/icons/android-chrome-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/static/icons/android-chrome-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }
-    ],
-    "theme_color": "#F47321",
-    "background_color": "#0C0E10",
-    "display": "standalone"
+  "name": "Chalk & Track - PalaEnrosadira",
+  "short_name": "Chalk & Track",
+  "description": "Traccia e condividi i blocchi di arrampicata della palestra.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icons/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#F47321",
+  "background_color": "#0C0E10",
+  "display": "standalone"
 }

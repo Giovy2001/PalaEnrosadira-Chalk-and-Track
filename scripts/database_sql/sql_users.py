@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 
 import libsql
 
+MAX_USERNAME_LENGTH = 40
+
 EDITABLE_FIELDS = {
     "user_color",
     "points",
@@ -38,6 +40,19 @@ def _validate_username(user_name: str) -> str:
     if not isinstance(user_name, str) or not user_name.strip():
         raise ValueError("Nome utente non valido")
     return user_name.strip()
+
+
+def validate_new_username(user_name: str) -> str:
+    """Valida un nuovo nome utente (i profile storici restano modificabili)."""
+
+    name = _validate_username(user_name)
+    if len(name) > MAX_USERNAME_LENGTH:
+        raise ValueError(
+            f"Il nome utente non può superare {MAX_USERNAME_LENGTH} caratteri"
+        )
+    if any(ord(character) < 32 for character in name):
+        raise ValueError("Il nome utente contiene caratteri non validi")
+    return name
 
 
 def format_table(user_object: tuple) -> dict:
@@ -139,7 +154,7 @@ def add_points(conn: libsql.Connection, user_name: str, points: int) -> None:
 def add_user(conn: libsql.Connection, user_data: dict) -> None:
     """Crea un nuovo utente. Solleva ValueError se i dati non sono validi."""
 
-    user_name = _validate_username(user_data.get("user_name"))
+    user_name = validate_new_username(user_data.get("user_name"))
     color = user_data.get("user_color", 0)
     try:
         color = int(color)
